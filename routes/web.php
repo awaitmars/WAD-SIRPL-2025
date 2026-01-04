@@ -1,7 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AcademicCalendarController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::resource('academic-calendar', AcademicCalendarController::class)->names([
+    'index' => 'academic.index',
+    'store' => 'academic.store',
+    'update' => 'academic.update',
+    'destroy' => 'academic.destroy',
+]);
