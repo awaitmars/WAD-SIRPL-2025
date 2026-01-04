@@ -3,6 +3,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\AcademicCalendarController;
+use App\Http\Controllers\MataKuliahController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -13,8 +16,6 @@ use App\Http\Controllers\JadwalController;
 // 1. Redirect Halaman Utama ke Dashboard Jadwal
 
 
-use App\Http\Controllers\AcademicCalendarController;
-
 Route::resource('academic-calendar', AcademicCalendarController::class)->names([
     'index' => 'academic.index',
     'store' => 'academic.store',
@@ -22,7 +23,6 @@ Route::resource('academic-calendar', AcademicCalendarController::class)->names([
     'destroy' => 'academic.destroy',
 ]);
 
-use App\Http\Controllers\MataKuliahController;
 
 Route::get('/', function () {
     return redirect()->route('jadwal.index');
