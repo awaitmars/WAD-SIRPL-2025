@@ -1,0 +1,128 @@
+:root {
+    --primary-color: #2592a3ff;
+    --sidebar-bg: #1F263E;
+    --bg-body: #f5f7fb;
+    --text-dark: #2c3e50;
+    --text-muted: #8b949e;
+}
+
+/* Base */
+body {
+    background-color: var(--bg-body);
+    font-family: 'Work Sans', sans-serif;
+    margin: 0;
+    color: var(--text-dark);
+}
+
+/* Sidebar */
+#sidebar {
+    width: 260px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    position: fixed;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.brand-section {
+    padding: 30px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.brand-logo {
+    background: var(--primary-color);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-heading {
+    padding: 25px 25px 15px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.nav-link {
+    color: rgba(255,255,255,0.5);
+    padding: 12px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+}
+
+.nav-link.active {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-left: 4px solid #00e5ff;
+}
+
+/* Main Content */
+#main-content {
+    margin-left: 260px;
+    padding: 40px;
+}
+
+.content-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+    border: 1px solid #edf2f7;
+}
+
+/* Button */
+.btn-custom-dark {
+    background: #1a202c;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #1a202c;
+}
+
+/* Table */
+.table thead th {
+    color: #718096;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    padding: 15px;
+    background-color: #fcfcfd;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Badge */
+.badge-type {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+.badge-mk {
+    background: #eef2ff;
+    color: #5d5fef;
+}
+
+.badge-lab {
+    background: #e6fffa;
+    color: #047857;
+}
