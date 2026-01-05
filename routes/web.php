@@ -1,6 +1,10 @@
 <?php
 
 
+
+
+use App\Http\Controllers\BeritaController;
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AcademicCalendarController;
@@ -24,6 +28,7 @@ Route::resource('academic-calendar', AcademicCalendarController::class)->names([
 ]);
 
 
+
 Route::get('/', function () {
     return redirect()->route('jadwal.index');
 });
@@ -45,4 +50,13 @@ Route::post('/master-mk', [MataKuliahController::class, 'store'])->name('master-
 Route::put('/master-mk/{id}', [MataKuliahController::class, 'update'])->name('master-mk.update');
 Route::delete('/master-mk/{id}', [MataKuliahController::class, 'destroy'])->name('master-mk.destroy');
 Route::get('/master-mk-download', [MataKuliahController::class, 'downloadPdf'])->name('master-mk.pdf');
+
+
+Route::get('/kliping-isu', [BeritaController::class, 'index'])->name('kliping.index');
+Route::post('/kliping-isu/store', [BeritaController::class, 'store'])->name('kliping.store');
+Route::put('/kliping-isu/update/{id}', [BeritaController::class, 'updateNote'])->name('kliping.update');
+Route::delete('/kliping-isu/delete/{id}', [BeritaController::class, 'destroy'])->name('kliping.destroy');
+Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('kliping.cetakPdf');
+Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('kliping.cetakPdf');
+Route::get('/kliping-isu/cetak-semua', [BeritaController::class, 'cetakSemuaPdf'])->name('kliping.cetakSemua');
 
