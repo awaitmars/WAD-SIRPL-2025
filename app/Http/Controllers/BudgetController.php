@@ -4,32 +4,55 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PracticumBudget;
+use App\Models\MataKuliah; 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BudgetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $dataAnggaran = PracticumBudget::latest()->get();
-        return view('budget.index', compact('dataAnggaran'));
+        // 1. Siapkan Query Dasar
+        $query = PracticumBudget::with('mataKuliah');
+        $judulHalaman = "Semua Mata Kuliah"; // Judul Default
+
+        // 2. Cek apakah ada pencarian?
+        if ($request->has('search') && $request->search != null) {
+            $keyword = $request->search;
+            $judulHalaman = "Hasil Pencarian: \"" . $keyword . "\"";
+
+            // Filter data berdasarkan Nama Bahan ATAU Nama Mata Kuliah
+            $query->where('nama_bahan', 'like', '%' . $keyword . '%')
+                  ->orWhereHas('mataKuliah', function($q) use ($keyword) {
+                      $q->where('nama_mk', 'like', '%' . $keyword . '%');
+                  });
+        }
+
+        // 3. Eksekusi Query
+        $dataAnggaran = $query->latest()->get();
+        
+        // 4. Ambil Data Master Matkul untuk Dropdown (Tetap)
+        $daftarMatkul = MataKuliah::all();
+
+        // Kirim $judulHalaman ke View
+        return view('budget.index', compact('dataAnggaran', 'daftarMatkul', 'judulHalaman'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
+            'mata_kuliah_id' => 'required|exists:mata_kuliahs,id',
             'nama_bahan' => 'required',
             'jumlah' => 'required|numeric',
             'estimasi_harga' => 'required|numeric',
         ]);
 
-        // --- MULAI INTEGRASI ---
-        
+        // --- LOGIKA API ---
         $hargaPasar = $request->estimasi_harga; 
         $sumberData = 'Estimasi Manual';
         $statusApi = false;
         $kursDollar = 16000; 
-        $debugError = '';
 
         try {
             $response = Http::withoutVerifying()->timeout(5)->get('https://dummyjson.com/products/search', [
@@ -39,32 +62,21 @@ class BudgetController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                
                 if (!empty($data['products'])) {
                     $produk = $data['products'][0]; 
-                    
-                    $hargaDollar = $produk['price'];
-                    $hargaRupiah = $hargaDollar * $kursDollar;
-
-                    $hargaPasar = $hargaRupiah;
+                    $hargaPasar = $produk['price'] * $kursDollar;
                     $sumberData = "API Global ({$produk['title']})"; 
                     $statusApi = true;
-                } else {
-                    $debugError = "Koneksi OK, tapi barang '{$request->nama_bahan}' tidak ada di database DummyJSON.";
                 }
-            } else {
-                $debugError = "Server API Menolak. Status: " . $response->status();
             }
+        } catch (\Exception $e) {}
+        // --- END LOGIKA API ---
 
-        } catch (\Exception $e) {
-            $debugError = "Error Koneksi: " . $e->getMessage();
-        }
-
-
+        // Panggil helper function (Pastikan isinya ada!)
         $status = $this->tentukanStatus($request->estimasi_harga, $hargaPasar);
 
         PracticumBudget::create([
-            'mata_kuliah' => $request->mata_kuliah ?? 'Pengembangan Aplikasi Website',
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'nama_bahan' => $request->nama_bahan,
             'jumlah' => $request->jumlah,
             'estimasi_harga' => $request->estimasi_harga,
@@ -72,13 +84,7 @@ class BudgetController extends Controller
             'status' => $status
         ]);
 
-        if ($statusApi) {
-            $pesan = "Sukses! Harga divalidasi via $sumberData.";
-        } else {
-            $pesan = "GAGAL API: " . $debugError;
-        }
-
-        return redirect()->back()->with('success', $pesan);
+        return redirect()->back()->with('success', 'Data berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
@@ -87,9 +93,10 @@ class BudgetController extends Controller
         $hargaPasar = $budget->harga_pasar;
         $kursDollar = 16000;
 
+        // Cek API lagi jika nama bahan berubah
         if ($request->nama_bahan != $budget->nama_bahan) {
             try {
-                $response = Http::timeout(5)->get('https://dummyjson.com/products/search', [
+                $response = Http::withoutVerifying()->timeout(5)->get('https://dummyjson.com/products/search', [
                     'q' => $request->nama_bahan,
                     'limit' => 1
                 ]);
@@ -106,6 +113,7 @@ class BudgetController extends Controller
         $status = $this->tentukanStatus($request->estimasi_harga, $hargaPasar);
 
         $budget->update([
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'nama_bahan' => $request->nama_bahan,
             'jumlah' => $request->jumlah,
             'estimasi_harga' => $request->estimasi_harga,
@@ -123,6 +131,14 @@ class BudgetController extends Controller
         return redirect()->back()->with('success', 'Data berhasil dihapus!');
     }
 
+    public function cetakPdf()
+    {
+        $dataAnggaran = PracticumBudget::all();
+        $pdf = Pdf::loadView('budget.cetak_pdf', ['dataAnggaran' => $dataAnggaran]);
+        return $pdf->download('laporan-anggaran.pdf');
+    }
+
+    // INI YANG TADI MENYEBABKAN ERROR JIKA ISINYA KOSONG
     private function tentukanStatus($estimasi, $pasar)
     {
         if ($estimasi < $pasar) {
@@ -132,14 +148,5 @@ class BudgetController extends Controller
         } else {
             return 'Peringatan'; 
         }
-    }
-
-    public function cetakPdf()
-    {
-        $dataAnggaran = PracticumBudget::all();
-    
-        $pdf = Pdf::loadView('budget.cetak_pdf', ['dataAnggaran' => $dataAnggaran]);
-        
-        return $pdf->download('laporan-anggaran.pdf');
     }
 }

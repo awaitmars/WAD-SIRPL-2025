@@ -20,12 +20,14 @@
         showModal: false, 
         isEditMode: false, 
         formAction: '{{ route('budget.store') }}',
-        formData: { id: '', nama: '', jumlah: '', estimasi: '', matkul: 'Pengembangan Aplikasi Website' },
+        // UBAH 1: Default matkul_id kosong
+        formData: { id: '', nama: '', jumlah: '', estimasi: '', matkul_id: '' },
 
         openAddModal() {
             this.isEditMode = false;
             this.formAction = '{{ route('budget.store') }}';
-            this.formData = { id: '', nama: '', jumlah: '', estimasi: '', matkul: 'Pengembangan Aplikasi Website' };
+            // UBAH 2: Reset form menggunakan matkul_id
+            this.formData = { id: '', nama: '', jumlah: '', estimasi: '', matkul_id: '' };
             this.showModal = true;
         },
 
@@ -37,7 +39,8 @@
                 nama: item.nama_bahan, 
                 jumlah: item.jumlah, 
                 estimasi: item.estimasi_harga,
-                matkul: item.mata_kuliah 
+                // UBAH 3: Ambil ID dari database (item.mata_kuliah_id)
+                matkul_id: item.mata_kuliah_id 
             };
             this.showModal = true;
         }
@@ -67,11 +70,13 @@
 
         {{-- ACTION BAR --}}
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <div class="relative w-full md:w-96">
+            
+            <form action="{{ route('budget.index') }}" method="GET" class="relative w-full md:w-96">
                 <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                <input type="text" class="bg-gray-50 border border-gray-300 rounded-lg pl-10 p-2.5 w-full text-sm" placeholder="Cari Mata Kuliah atau Bahan...">
-            </div>
-
+                <input type="text" name="search" value="{{ request('search') }}" 
+                       class="bg-gray-50 border border-gray-300 rounded-lg pl-10 p-2.5 w-full text-sm focus:ring-blue-500 focus:border-blue-500 transition" 
+                       placeholder="Cari Mata Kuliah atau Bahan..." autocomplete="off">
+            </form>
             <div class="flex gap-3 w-full md:w-auto">
                 <button @click="openAddModal()" class="border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white font-bold rounded-lg text-sm px-4 py-2 flex items-center">
                     <i class="fas fa-plus-circle mr-2"></i> Tambah Bahan
@@ -85,7 +90,7 @@
         </div>
 
         <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2">
-            Pengembangan Aplikasi Website
+            {{ $judulHalaman }}
         </h3>
 
         {{-- TABLE --}}
@@ -93,6 +98,7 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs uppercase">
                     <tr>
+                        <th class="px-6 py-4">Mata Kuliah</th>
                         <th class="px-6 py-4">Nama Bahan</th>
                         <th class="px-6 py-4 text-center">Jml</th>
                         <th class="px-6 py-4">Hrg. Est</th>
@@ -106,6 +112,13 @@
                 <tbody class="divide-y">
                     @forelse($dataAnggaran as $item)
                         <tr class="hover:bg-gray-50">
+                            {{-- KOLOM MATKUL BARU --}}
+                            <td class="px-6 py-4">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                                    {{ $item->mataKuliah->nama_mk ?? '-' }}
+                                </span>
+                            </td>
+
                             <td class="px-6 py-4 font-medium">{{ $item->nama_bahan }}</td>
                             <td class="px-6 py-4 text-center">{{ $item->jumlah }}</td>
                             <td class="px-6 py-4">Rp {{ number_format($item->estimasi_harga,0,',','.') }}</td>
@@ -126,12 +139,15 @@
                                 <button @click="openEditModal({{ $item }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <form action="{{ route('budget.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="ml-2 text-red-600"><i class="fas fa-trash"></i></button>
+                                </form>
                             </td>
                         </tr>
                     @empty
-                        {{-- EMPTY STATE TIDAK DIHAPUS --}}
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-gray-400 italic">
+                            <td colspan="8" class="py-8 text-center text-gray-400 italic">
                                 <i class="fas fa-box-open text-3xl mb-2"></i>
                                 <div>Belum ada data bahan. Silakan klik "Tambah Bahan".</div>
                             </td>
@@ -142,8 +158,73 @@
         </div>
     </div>
 
-    {{-- MODAL (TETAP) --}}
-    {{-- modal code kamu TIDAK diubah, aman --}}
+    {{-- MODAL BARU (YANG SUDAH ADA DROPDOWN MATKUL) --}}
+    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all" @click.away="showModal = false">
+            
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800" x-text="isEditMode ? 'Edit Bahan Praktikum' : 'Tambah Bahan Praktikum'"></h3>
+                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 focus:outline-none transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+    
+            <form :action="formAction" method="POST" class="p-6">
+                @csrf
+                <template x-if="isEditMode">
+                    <input type="hidden" name="_method" value="PUT">
+                </template>
+    
+                <div class="space-y-4">
+                    
+                    {{-- DROPDOWN MATA KULIAH --}}
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-1">Mata Kuliah</label>
+                        <div class="relative">
+                            <select name="mata_kuliah_id" x-model="formData.matkul_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition" required>
+                                <option value="">-- Pilih Mata Kuliah --</option>
+                                @foreach($daftarMatkul as $mk)
+                                    <option value="{{ $mk->id }}">{{ $mk->nama_mk }} ({{ $mk->kode_mk }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-gray-700 text-sm font-semibold mb-1">Nama Bahan</label>
+                            <input type="text" name="nama_bahan" x-model="formData.nama" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Contoh: RAM 8GB" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-semibold mb-1">Jumlah</label>
+                            <input type="number" name="jumlah" x-model="formData.jumlah" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="0" required>
+                        </div>
+                    </div>
+    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-1">Estimasi Harga Satuan (Rp)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 font-bold">Rp</span>
+                            </div>
+                            <input type="number" name="estimasi_harga" x-model="formData.estimasi" class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Masukkan harga..." required>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Sistem akan memvalidasi dengan API Harga Pasar otomatis.</p>
+                    </div>
+                </div>
+    
+                <div class="flex justify-end space-x-3 mt-8 pt-4 border-t border-gray-100">
+                    <button type="button" @click="showModal = false" class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition focus:outline-none">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition focus:outline-none flex items-center">
+                        <i class="fas fa-save mr-2"></i> Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 @endsection
