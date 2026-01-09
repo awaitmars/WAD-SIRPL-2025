@@ -85,6 +85,7 @@ class JadwalController extends Controller
         $data = [
             'dosen_id' => 1,
             'mata_kuliah_id' => $request->mata_kuliah_id,
+            'mata_kuliah' => MataKuliah::find($request->mata_kuliah_id)->nama_mk,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
