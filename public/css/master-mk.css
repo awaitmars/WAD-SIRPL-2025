@@ -53,11 +53,11 @@ body {
 
 .nav-link {
     color: rgba(255,255,255,0.5);
-    padding: 12px 25px;
+    padding: 16px 25px;
     display: flex;
     align-items: center;
     gap: 15px;
-    font-size: 0.9rem;
+    font-size: 17px;
     transition: all 0.3s;
 }
 

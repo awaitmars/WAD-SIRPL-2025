@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('sesi_kelas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('dosen_id')->nullable();
-            
+            $table->foreignId('mata_kuliah_id')->constrained('mata_kuliahs')->onDelete('cascade');
             $table->string('mata_kuliah');
             $table->string('ruangan_kelas'); // Pastikan kolom ini ada
             $table->date('tanggal');

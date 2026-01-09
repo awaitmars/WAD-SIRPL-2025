@@ -2,81 +2,77 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MataKuliah;
 use Illuminate\Http\Request;
 use App\Models\SesiPraktikum;
 use App\Models\SesiKelas; 
 use Illuminate\Support\Facades\Http; 
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf; // <--- PENTING: Library PDF
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class JadwalController extends Controller
 {
     public function index()
     {
+        $jadwal = $this->getCombinedJadwal();
+        $masterMk = MataKuliah::all();
+        return view('dosen.jadwal.index', compact('jadwal', 'masterMk'));
+
+    
+    }
+
+    private function getCombinedJadwal()
+    {
         // 1. Ambil Data Praktikum & Mapping
-        $praktikum = SesiPraktikum::where('dosen_id', 1)->get()->map(function($item) {
+        $praktikum = SesiPraktikum::with('mataKuliah')->where('dosen_id', 1)->get()->map(function($item) {
             $item->type = 'practicum';
             $item->label_jenis = 'PRAKTIKUM';
+            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
             $item->css_badge = 'border-purple-200 bg-purple-50 text-purple-600';
             $item->ruangan = $item->ruangan_lab; 
             return $item;
         });
 
         // 2. Ambil Data Kuliah & Mapping
-        $kelas = SesiKelas::where('dosen_id', 1)->get()->map(function($item) {
+        $kelas = SesiKelas::with('mataKuliah')->where('dosen_id', 1)->get()->map(function($item) {
             $item->type = 'lecture';
             $item->label_jenis = 'KULIAH';
+            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
             $item->css_badge = 'border-indigo-200 bg-indigo-50 text-indigo-600';
             $item->ruangan = $item->ruangan_kelas;
             return $item;
         });
 
-        // 3. Gabungkan dan Urutkan
-        $jadwal = $praktikum->merge($kelas)->sortBy(function($item) {
+        return $praktikum->merge($kelas)->sortBy(function($item) {
             return $item->tanggal . $item->waktu_mulai;
         });
-
-        return view('dosen.jadwal.index', compact('jadwal'));
     }
 
-    // --- FUNGSI BARU UNTUK EXPORT PDF ---
     public function exportPdf()
     {
-        // Logika pengambilan data SAMA PERSIS dengan index()
-        // Kita perlu data yang sama untuk dicetak
-        
-        $praktikum = SesiPraktikum::where('dosen_id', 1)->get()->map(function($item) {
-            $item->type = 'practicum';
-            $item->label_jenis = 'PRAKTIKUM';
-            $item->ruangan = $item->ruangan_lab; 
-            return $item;
-        });
-
-        $kelas = SesiKelas::where('dosen_id', 1)->get()->map(function($item) {
-            $item->type = 'lecture';
-            $item->label_jenis = 'KULIAH';
-            $item->ruangan = $item->ruangan_kelas;
-            return $item;
-        });
-
-        $jadwal = $praktikum->merge($kelas)->sortBy(function($item) {
-            return $item->tanggal . $item->waktu_mulai;
-        });
-
-        // Load View PDF (bukan view index biasa)
-        $pdf = Pdf::loadView('dosen.jadwal.pdf', compact('jadwal'));
-        
+        try {
+            $jadwal = $this->getCombinedJadwal();
+            $pdf = Pdf::loadView('dosen.jadwal.pdf', [
+                'jadwal' => $jadwal,
+                'tgl_centak' => Carbon::now()->translatedFormat('d F Y H:i'),
+                'nama_dosen' => 'Dr. John Doe',
+            ]);
+                
         // Atur Kertas A4 Landscape
         $pdf->setPaper('a4', 'landscape');
 
         // Download file
-        return $pdf->download('Laporan_Jadwal_Mengajar.pdf');
+        return $pdf->download('jadwal_mata_kuliah.pdf');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengekspor PDF: ' . $e->getMessage());
+        }
     }
+
 
     public function store(Request $request)
     {
         $request->validate([
-            'mata_kuliah' => 'required',
+            'mata_kuliah_id' => 'required',
             'ruangan'     => 'required',
             'type'        => 'required',
             'tanggal'     => 'required|date',
@@ -88,7 +84,7 @@ class JadwalController extends Controller
 
         $data = [
             'dosen_id' => 1,
-            'mata_kuliah' => $request->mata_kuliah,
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
@@ -110,7 +106,7 @@ class JadwalController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'mata_kuliah' => 'required',
+            'mata_kuliah_id' => 'required',
             'ruangan'     => 'required',
             'tanggal'     => 'required|date',
             'waktu_mulai' => 'required',
@@ -121,7 +117,7 @@ class JadwalController extends Controller
         $validasi = $this->checkPrayerTimeConflict($request->tanggal, $request->waktu_mulai, $request->waktu_selesai);
 
         $dataUpdate = [
-            'mata_kuliah' => $request->mata_kuliah,
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,

@@ -1,0 +1,105 @@
+
+        
+        /* HEADER */
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 10px; 
+        }
+
+        .search-top { background: #fff; border-radius: 30px; padding: 10px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); width: 300px; display: flex; align-items: center; }
+        .search-top input { border: none; outline: none; margin-left: 10px; width: 100%; }
+        
+        .page-header { 
+            background: #fff; 
+            padding: 16px 20px; 
+            border-radius: 15px; 
+            margin-bottom: 12px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.02); 
+        }
+
+        .page-header h2 { 
+            font-size: 1.5rem; 
+            font-weight: 700; color: #1B2559; 
+            margin: 4px; }
+        
+        /* AREA PENCARIAN (KIRI) */
+        .row{
+            align-items: flex-start;
+        }
+
+        .search-area { 
+            background: #fff; 
+            border-radius: 20px; 
+            padding: 18px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.02); 
+        }
+
+        .filter-bar { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 10px; 
+            flex-wrap: wrap;
+        }
+
+        .input-search-custom { 
+            background: #F4F7FE; 
+            border: none; 
+            border-radius: 10px; 
+            padding: 10px 16px; 
+            width: 100%; 
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-validasi { 
+            background: #868CFF; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            padding: 0 18px; 
+            font-weight: 600; 
+        }
+
+        /* KARTU BERITA */
+        .news-card { border: 1px solid #E0E5F2; border-radius: 15px; padding: 15px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; background: #fff; }
+        .news-img { width: 120px; height: 90px; object-fit: cover; border-radius: 10px; }
+        .news-content { flex: 1; }
+        .news-source { font-size: 0.75rem; font-weight: 700; border: 1px solid #E0E5F2; padding: 4px 10px; border-radius: 8px; display: inline-block; margin-bottom: 8px; }
+        .btn-simpan-rps { border: 2px solid #1B2559; background: transparent; color: #1B2559; font-weight: 700; font-size: 0.75rem; padding: 5px 15px; border-radius: 20px; float: right; margin-top: 5px; transition: 0.3s; cursor: pointer;}
+        .btn-simpan-rps:hover { background: #1B2559; color: white; }
+
+        /* AREA DATABASE (KANAN) */
+        .rps-area { 
+            background: #fff; 
+            border: 2px solid #4318FF; 
+            border-radius: 20px; 
+            padding: 25px; 
+            height: calc(100vh - 230px);
+            overflow: auto;
+            box-shadow: 0 5px 20px rgba(67, 24, 255, 0.05); 
+        }
+        .rps-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #F4F7FE; padding-bottom: 15px; }
+        
+        .btn-action { background: #A3AED0; color: white; border: none; padding: 6px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.3s; }
+        .btn-action:hover { background: #2B3674; color: white; }
+        .btn-rekap { background-color: #dc3545; } /* Merah untuk PDF Rekap */
+        .btn-rekap:hover { background-color: #bb2d3b; }
+
+        .db-item { border: 1px solid #E0E5F2; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .catatan-box { background: #E9EDF7; border-radius: 10px; padding: 15px; margin-top: 15px; width: 100%; border: none; font-size: 0.9rem; color: #2B3674; }
+
+        /* LINK JUDUL */
+        .judul-link { color: #1B2559; text-decoration: none; transition: 0.2s; }
+        .judul-link:hover { color: #4318FF; text-decoration: underline; }
+
+        /* KHUSUS PRINT (Agar saat Print View tampilan bersih) */
+        @media print {
+            .sidebar, .top-bar, .search-area, .btn-action, .no-print, .btn-simpan-rps { display: none !important; }
+            .main-content { margin-left: 0; padding: 0; }
+            .col-md-5 { width: 100% !important; flex: 0 0 100%; max-width: 100%; }
+            .col-md-7 { display: none; }
+            .rps-area { border: none; box-shadow: none; }
+            body { background-color: white; }
+        }

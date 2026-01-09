@@ -1,25 +1,13 @@
 <?php
 
-
-
-
 use App\Http\Controllers\BeritaController;
-
+use App\Http\Controllers\BudgetController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AcademicCalendarController;
 use App\Http\Controllers\MataKuliahController;
 
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-// 1. Redirect Halaman Utama ke Dashboard Jadwal
-
-
+// Kalender Akademik
 Route::resource('academic-calendar', AcademicCalendarController::class)->names([
     'index' => 'academic.index',
     'store' => 'academic.store',
@@ -28,30 +16,23 @@ Route::resource('academic-calendar', AcademicCalendarController::class)->names([
 ]);
 
 
-
+// Jadwal Mata Kuliah
 Route::get('/', function () {
-    return redirect()->route('jadwal.index');
-});
-
-
-// 2. Custom Route untuk Export PDF (TARUH DISINI SEBELUM RESOURCE)
+    return redirect()->route('jadwal.index'); });
 Route::get('/jadwal/export-pdf', [JadwalController::class, 'exportPdf'])->name('jadwal.exportPdf');
-
-// 3. Custom Route untuk DELETE
 Route::delete('/jadwal/{type}/{id}', [JadwalController::class, 'destroy'])
     ->name('jadwal.destroy');
-
-// 4. Resource Route Utama
 Route::resource('jadwal', JadwalController::class)
     ->except(['destroy', 'create', 'edit', 'show']);
 
+//Master Mata Kuliah
 Route::get('/master-mk', [MataKuliahController::class, 'index'])->name('master-mk.index');
 Route::post('/master-mk', [MataKuliahController::class, 'store'])->name('master-mk.store');
 Route::put('/master-mk/{id}', [MataKuliahController::class, 'update'])->name('master-mk.update');
 Route::delete('/master-mk/{id}', [MataKuliahController::class, 'destroy'])->name('master-mk.destroy');
 Route::get('/master-mk-download', [MataKuliahController::class, 'downloadPdf'])->name('master-mk.pdf');
 
-
+//Klipping
 Route::get('/kliping-isu', [BeritaController::class, 'index'])->name('kliping.index');
 Route::post('/kliping-isu/store', [BeritaController::class, 'store'])->name('kliping.store');
 Route::put('/kliping-isu/update/{id}', [BeritaController::class, 'updateNote'])->name('kliping.update');
@@ -60,8 +41,7 @@ Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])
 Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('kliping.cetakPdf');
 Route::get('/kliping-isu/cetak-semua', [BeritaController::class, 'cetakSemuaPdf'])->name('kliping.cetakSemua');
 
-use App\Http\Controllers\BudgetController;
-
+//Anggaran
 Route::get('/', [BudgetController::class, 'index']); // Halaman awal
 Route::get('/anggaran', [BudgetController::class, 'index'])->name('budget.index');
 Route::post('/anggaran', [BudgetController::class, 'store'])->name('budget.store');

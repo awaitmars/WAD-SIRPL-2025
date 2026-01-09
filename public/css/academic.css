@@ -1,0 +1,24 @@
+/* UI Kalender */
+    .calendar-td { height: 85px; vertical-align: middle; width: 14.28%; border: 1px solid #f0f0f0 !important; }
+    
+    /* Warna Merah (Libur) */
+    .bg-danger-custom { 
+        background-color: #dc3545 !important; color: white !important; font-weight: bold; 
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    
+    /* Warna Biru (Kegiatan) */
+    .bg-primary-custom { 
+        background-color: #0d6efd !important; color: white !important; font-weight: bold; 
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+
+    .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+    @media print {
+        .sidebar, .top-navbar, .btn, .logout-section, .nav-label, .btn-close, .d-print-none { display: none !important; }
+        .main-content { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+        .bg-danger-custom { background-color: #dc3545 !important; color: white !important; border: 1px solid #dc3545 !important; }
+        .bg-primary-custom { background-color: #0d6efd !important; color: white !important; border: 1px solid #0d6efd !important; }
+        .table th, .table td { border: 1px solid #dee2e6 !important; padding: 8px !important; }
+    }

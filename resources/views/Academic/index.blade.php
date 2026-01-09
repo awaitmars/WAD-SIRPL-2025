@@ -1,33 +1,11 @@
-@extends('welcome')
+@extends('layout.main')
+
+@push('styles')
+    {{-- CSS dipanggil di sini agar masuk ke head di file welcome --}}
+    <link rel="stylesheet" href="{{ asset('css/academic.css') }}">
+@endpush
 
 @section('content')
-<style>
-    /* UI Kalender */
-    .calendar-td { height: 85px; vertical-align: middle; width: 14.28%; border: 1px solid #f0f0f0 !important; }
-    
-    /* Warna Merah (Libur) */
-    .bg-danger-custom { 
-        background-color: #dc3545 !important; color: white !important; font-weight: bold; 
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-    
-    /* Warna Biru (Kegiatan) */
-    .bg-primary-custom { 
-        background-color: #0d6efd !important; color: white !important; font-weight: bold; 
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-
-    .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-    @media print {
-        .sidebar, .top-navbar, .btn, .logout-section, .nav-label, .btn-close, .d-print-none { display: none !important; }
-        .main-content { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-        .bg-danger-custom { background-color: #dc3545 !important; color: white !important; border: 1px solid #dc3545 !important; }
-        .bg-primary-custom { background-color: #0d6efd !important; color: white !important; border: 1px solid #0d6efd !important; }
-        .table th, .table td { border: 1px solid #dee2e6 !important; padding: 8px !important; }
-    }
-</style>
-
 <div class="container-fluid p-0">
     <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
         <h4 class="fw-bold m-0 text-dark">Kalender Akademik</h4>
@@ -128,13 +106,14 @@
     </div>
 </div>
 
-<div class="modal fade d-print-none" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
+{{-- MODAL TAMBAH --}}
+<div class="modal fade d-print-none" id="modalTambah" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="{{ route('academic.store') }}" method="POST">
                 @csrf
                 <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold" id="modalTambahLabel">Tambah Jadwal Baru</h5>
+                    <h5 class="modal-title fw-bold">Tambah Jadwal Baru</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
@@ -163,6 +142,7 @@
     </div>
 </div>
 
+{{-- MODAL EDIT --}}
 @foreach($events as $event)
 <div class="modal fade d-print-none" id="editModal{{ $event->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -198,5 +178,4 @@
     </div>
 </div>
 @endforeach
-
 @endsection

@@ -1,40 +1,10 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SI-RP | Master Mata Kuliah & Lab</title>
+@extends('layout.main')
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
-    
-    <link rel="stylesheet" href="{{ asset('css/master-mk.css') }}">
-</head>
-<body>
+@section('title', 'Master Mata Kuliah & Lab')
+@section('page_title', 'Manajemen Mata Kuliah & Lab')
+@section('page_subtitle', 'Data master untuk akademik dan lokasi laboratorium.')
 
-    <nav id="sidebar">
-        <div class="brand-section">
-            <div class="brand-logo"><i class="fa fa-graduation-cap text-white"></i></div>
-            <h6 class="mb-0 fw-bold" style="letter-spacing: 1px;">SI-RPL</h6>
-        </div>
-        <div class="sidebar-heading">Menu Utama</div>
-        <ul class="nav flex-column">
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-th-large"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="#" class="nav-link active"><i class="fa fa-database"></i> Master Mata Kuliah</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-chalkboard-teacher"></i> Jadwal Mata Kuliah</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-calendar-alt"></i> Kalender Akademik</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-wallet"></i> Anggaran Akademik</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-clock"></i> Jadwal Kelas & Praktikum</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="fa fa-newspaper"></i> Kliping Isu</a></li>
-        </ul>
-    </nav>
-
-    <main id="main-content">
-        <div class="header-title mb-4">
-            <h4 class="fw-bold mb-1">Manajemen Mata Kuliah & Lab</h4>
-            <p class="text-muted small">Data master untuk akademik dan lokasi laboratorium.</p>
-        </div>
+@section('content')
 
         <div class="content-card">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -183,110 +153,110 @@
             </div>
         </div>
     </div>
+@endsection
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
 
-        async function loadProvinsi() {
-            try {
-                    const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json`);
+            async function loadProvinsi() {
+                try {
+                        const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json`);
+                        const data = await res.json();
+                        let options = '<option value="">Pilih Provinsi</option>';
+                        data.forEach(p => {
+                            // Kita simpan Nama di value untuk dikirim ke DB, dan ID di dataset untuk fetch Kota
+                            options += `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`;
+                        });
+                        document.getElementById('provinsi').innerHTML = options;
+                    } catch (error) {
+                        console.error("Gagal load provinsi:", error);
+                    }
+                }
+
+            document.getElementById('provinsi').addEventListener('change', async function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const provId = selectedOption.getAttribute('data-id');
+        
+                if (!provId) return;
+
+                try {
+                    const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provId}.json`);
                     const data = await res.json();
-                    let options = '<option value="">Pilih Provinsi</option>';
-                    data.forEach(p => {
-                        // Kita simpan Nama di value untuk dikirim ke DB, dan ID di dataset untuk fetch Kota
-                        options += `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`;
+                    let options = '<option value="">Pilih Kota/Kab</option>';
+                    data.forEach(k => {
+                        options += `<option value="${k.name}">${k.name}</option>`;
                     });
-                    document.getElementById('provinsi').innerHTML = options;
+                    document.getElementById('kota').innerHTML = options;
                 } catch (error) {
-                    console.error("Gagal load provinsi:", error);
+                    console.error("Gagal load kota:", error);
                 }
+            });
+
+            window.onload = loadProvinsi;
+
+            // --- 2. MODAL & FORM LOGIC ---
+            function adjustFormFields() {
+                const type = document.getElementById('dataType').value;
+                document.getElementById('sectionMK').style.display = (type === 'lab_only') ? 'none' : 'block';
+                document.getElementById('sectionLab').style.display = (type === 'mk_only') ? 'none' : 'block';
             }
 
-        document.getElementById('provinsi').addEventListener('change', async function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const provId = selectedOption.getAttribute('data-id');
-    
-            if (!provId) return;
-
-            try {
-                const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provId}.json`);
-                const data = await res.json();
-                let options = '<option value="">Pilih Kota/Kab</option>';
-                data.forEach(k => {
-                    options += `<option value="${k.name}">${k.name}</option>`;
-                });
-                document.getElementById('kota').innerHTML = options;
-            } catch (error) {
-                console.error("Gagal load kota:", error);
-            }
-        });
-
-        window.onload = loadProvinsi;
-
-        // --- 2. MODAL & FORM LOGIC ---
-        function adjustFormFields() {
-            const type = document.getElementById('dataType').value;
-            document.getElementById('sectionMK').style.display = (type === 'lab_only') ? 'none' : 'block';
-            document.getElementById('sectionLab').style.display = (type === 'mk_only') ? 'none' : 'block';
-        }
-
-        // Handle Tombol Tambah
-        document.querySelector('[data-bs-target="#modalTambah"]')?.addEventListener('click', () => {
-            document.getElementById('modalTitle').innerText = "Tambah Data Baru";
-            document.getElementById('mainForm').action = "{{ route('master-mk.store') }}";
-            document.getElementById('methodField').innerHTML = "";
-            document.getElementById('groupType').style.display = "block";
-            document.getElementById('mainForm').reset();
-            adjustFormFields();
-            new bootstrap.Modal(document.getElementById('modalMaster')).show();
-        });
-
-        // Handle Tombol Edit
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const d = this.dataset;
-                const form = document.getElementById('mainForm');
-
-                document.getElementById('modalTitle').innerText = "Update Data";
-                document.getElementById('mainForm').action = "{{ url('master-mk') }}/" + d.id;
-                document.getElementById('methodField').innerHTML = '@method("PUT")';
-                document.getElementById('groupType').style.display = "none";
-                
-                let typeInput = document.getElementById('in_type_hidden');
-                if (!typeInput) {
-                    typeInput = document.createElement('input');
-                    typeInput.type = 'hidden';
-                    typeInput.name = 'type';
-                    typeInput.id = 'in_type_hidden';
-                    form.appendChild(typeInput);
-                }
-
-                typeInput.value = d.type;
-
-                document.getElementById('in_kode').value = d.kode;
-                document.getElementById('in_nama_mk').value = d.nama;
-                document.getElementById('in_nama_lab').value = d.namalab;
-                document.getElementById('in_sks').value = d.sks;
-                document.getElementById('in_kapasitas').value = d.kapasitas;
-                document.getElementById('provinsi').value = d.provinsi || '';git
-                document.getElementById('kota').value = d.kota || '';
-
-                if (d.type === 'mk') {
-                    document.getElementById('sectionMK').style.display = 'block';
-                    document.getElementById('sectionLab').style.display = (d.namalab !== '') ? 'block' : 'none';
-                } else {
-                    document.getElementById('sectionMK').style.display = 'none';
-                    document.getElementById('sectionLab').style.display = 'block';
-                }
-
+            // Handle Tombol Tambah
+            document.querySelector('[data-bs-target="#modalTambah"]')?.addEventListener('click', () => {
+                document.getElementById('modalTitle').innerText = "Tambah Data Baru";
+                document.getElementById('mainForm').action = "{{ route('master-mk.store') }}";
+                document.getElementById('methodField').innerHTML = "";
+                document.getElementById('groupType').style.display = "block";
+                document.getElementById('mainForm').reset();
+                adjustFormFields();
                 new bootstrap.Modal(document.getElementById('modalMaster')).show();
             });
-        });
 
-        window.onload = loadProvinsi;
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            // Handle Tombol Edit
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const d = this.dataset;
+                    const form = document.getElementById('mainForm');
 
+                    document.getElementById('modalTitle').innerText = "Update Data";
+                    document.getElementById('mainForm').action = "{{ url('master-mk') }}/" + d.id;
+                    document.getElementById('methodField').innerHTML = '@method("PUT")';
+                    document.getElementById('groupType').style.display = "none";
+                    
+                    let typeInput = document.getElementById('in_type_hidden');
+                    if (!typeInput) {
+                        typeInput = document.createElement('input');
+                        typeInput.type = 'hidden';
+                        typeInput.name = 'type';
+                        typeInput.id = 'in_type_hidden';
+                        form.appendChild(typeInput);
+                    }
+
+                    typeInput.value = d.type;
+
+                    document.getElementById('in_kode').value = d.kode;
+                    document.getElementById('in_nama_mk').value = d.nama;
+                    document.getElementById('in_nama_lab').value = d.namalab;
+                    document.getElementById('in_sks').value = d.sks;
+                    document.getElementById('in_kapasitas').value = d.kapasitas;
+                    document.getElementById('provinsi').value = d.provinsi || '';git
+                    document.getElementById('kota').value = d.kota || '';
+
+                    if (d.type === 'mk') {
+                        document.getElementById('sectionMK').style.display = 'block';
+                        document.getElementById('sectionLab').style.display = (d.namalab !== '') ? 'block' : 'none';
+                    } else {
+                        document.getElementById('sectionMK').style.display = 'none';
+                        document.getElementById('sectionLab').style.display = 'block';
+                    }
+
+                    new bootstrap.Modal(document.getElementById('modalMaster')).show();
+                });
+            });
+
+            window.onload = loadProvinsi;
+        </script>
         <script>
             @if ($errors->any())
                 Swal.fire({
@@ -317,5 +287,4 @@
                 });
             @endif
         </script>
-</body>
-</html> 
+        @endpush
