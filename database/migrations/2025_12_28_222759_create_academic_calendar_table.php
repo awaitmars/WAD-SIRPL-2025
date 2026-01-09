@@ -9,12 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('academic_calendars', function (Blueprint $table) {
-            $table->id();
-            $table->date('tanggal');
-            $table->string('nama_kegiatan');
-            $table->enum('tipe', ['libur', 'kegiatan']); 
-            $table->timestamps();
-        });
+        $table->id();
+        $table->date('tanggal');
+        
+        // UBAH BARIS INI MENJADI NULLABLE
+        $table->string('nama_kegiatan')->nullable(); 
+        
+        $table->string('tipe'); // libur, kegiatan, matkul
+        $table->foreignId('mata_kuliah_id')->nullable()->constrained('mata_kuliahs')->onDelete('cascade');
+        $table->timestamps();
+    });
     }
 
     public function down(): void
