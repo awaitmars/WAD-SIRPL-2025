@@ -12,7 +12,19 @@ class berita extends Model
     protected $table = 'beritas'; 
 
     protected $fillable = [
-        'judul', 'sumber', 'url_berita', 
-        'url_gambar', 'published_at', 'catatan_dosen'
+        'mata_kuliah_id', // <--- PENTING: Agar ID Matkul bisa tersimpan
+        'judul', 
+        'sumber', 
+        'url_berita', 
+        'url_gambar', 
+        'published_at', 
+        'catatan_dosen'
     ];
+
+    // --- RELASI KE MASTER MATA KULIAH ---
+    // Pastikan nama Model adalah 'MataKuliah'
+    public function mataKuliah()
+    {
+        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
+    }
 }
