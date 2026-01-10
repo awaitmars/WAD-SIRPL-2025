@@ -1,72 +1,58 @@
-@extends('welcome')
+@extends('layout.main')
 
-@section('content')
+@push('styles')
 <style>
     /* UI Kalender */
-    .calendar-td { height: 85px; vertical-align: middle; width: 14.28%; border: 1px solid #f0f0f0 !important; }
-    
-    /* Warna Merah (Libur) */
-    .bg-danger-custom { 
-        background-color: #dc3545 !important; color: white !important; font-weight: bold; 
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-    
-    /* Warna Biru (Kegiatan) */
-    .bg-primary-custom { 
-        background-color: #0d6efd !important; color: white !important; font-weight: bold; 
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
+    .calendar-td { vertical-align: top !important; height: 110px; width: 14.28%; padding: 8px !important; border: 1px solid #dee2e6 !important; }
+    .bg-danger-custom { background-color: #fff5f5 !important; }
+    .bg-primary-custom { background-color: #f0f7ff !important; }
+    .bg-success-custom { background-color: #f2faf2 !important; }
+    .event-badge { display: block; text-align: center; padding: 2px; border-radius: 4px; font-size: 0.65rem; margin-top: 4px; font-weight: bold; color: white; }
+    .badge-libur { background-color: #dc3545; }
+    .badge-kegiatan { background-color: #0d6efd; }
+    .badge-matkul { background-color: #198754; }
 
-    .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
+    /* Fix Print Full Width */
     @media print {
-        .sidebar, .top-navbar, .btn, .logout-section, .nav-label, .btn-close, .d-print-none { display: none !important; }
-        .main-content { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-        .bg-danger-custom { background-color: #dc3545 !important; color: white !important; border: 1px solid #dc3545 !important; }
-        .bg-primary-custom { background-color: #0d6efd !important; color: white !important; border: 1px solid #0d6efd !important; }
-        .table th, .table td { border: 1px solid #dee2e6 !important; padding: 8px !important; }
+        body * { visibility: hidden; }
+        #printableArea, #printableArea * { visibility: visible; }
+        #printableArea { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; }
+        .d-print-none, .btn, .modal { display: none !important; }
+        .card { border: 1px solid #000 !important; box-shadow: none !important; width: 100% !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     }
 </style>
+@endpush
 
-<div class="container-fluid p-0">
-    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+@section('content')
+<div class="container-fluid" id="printableArea">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold m-0 text-dark">Kalender Akademik</h4>
-        <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-dark btn-sm px-3"><i class="fas fa-print me-1"></i> Cetak</button>
-            <button type="button" class="btn btn-dark btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalTambah">
-                + Tambah Hari Libur/Kegiatan
-            </button>
+        <div class="d-flex gap-2 d-print-none">
+            <button onclick="window.print()" class="btn btn-outline-dark btn-sm px-3 shadow-sm">Cetak</button>
+            <button class="btn btn-dark btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambah">+ Tambah Agenda</button>
         </div>
     </div>
 
-    <div class="card p-4">
+    {{-- CARD KALENDER --}}
+    <div class="card p-4 shadow-sm border-0 mb-4">
         @php
             $currentDate = \Carbon\Carbon::create($year, $month, 1);
-            $prevMonth = $currentDate->copy()->subMonth();
-            $nextMonth = $currentDate->copy()->addMonth();
-
-            $normalizedEvents = [];
-            foreach($eventDates as $date => $tipe) {
-                try {
-                    $cleanDate = \Carbon\Carbon::parse($date)->format('Y-m-d');
-                    $normalizedEvents[$cleanDate] = $tipe;
-                } catch(\Exception $e) { continue; }
-            }
+            $prevMonth = $currentDate->copy()->subMonth(); $nextMonth = $currentDate->copy()->addMonth();
         @endphp
         
         <div class="text-center mb-4">
-            <h5 class="fw-bold d-none d-print-block">KALENDER AKADEMIK - {{ strtoupper($currentDate->translatedFormat('F Y')) }}</h5>
-            <div class="d-inline-flex align-items-center bg-light rounded-pill px-4 py-1 d-print-none">
-                <a href="?month={{ $prevMonth->month }}&year={{ $prevMonth->year }}" class="text-dark text-decoration-none"><i class="fas fa-chevron-left"></i></a>
-                <span class="fw-bold mx-4" style="min-width: 150px;">{{ $currentDate->translatedFormat('F Y') }}</span>
-                <a href="?month={{ $nextMonth->month }}&year={{ $nextMonth->year }}" class="text-dark text-decoration-none"><i class="fas fa-chevron-right"></i></a>
+            <div class="d-inline-flex align-items-center bg-light rounded-pill px-4 py-1">
+                <a href="?month={{ $prevMonth->month }}&year={{ $prevMonth->year }}" class="text-dark d-print-none"><i class="fas fa-chevron-left"></i></a>
+                <span class="fw-bold mx-4 text-uppercase">{{ $currentDate->translatedFormat('F Y') }}</span>
+                <a href="?month={{ $nextMonth->month }}&year={{ $nextMonth->year }}" class="text-dark d-print-none"><i class="fas fa-chevron-right"></i></a>
             </div>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-bordered text-center mb-0">
-                <thead class="bg-light">
-                    <tr><th class="text-danger py-3">Min</th><th>Sen</th><th>Sel</th><th>Rab</th><th>Kam</th><th>Jum</th><th>Sab</th></tr>
+            <table class="table table-bordered mb-0">
+                <thead class="bg-light text-center small fw-bold">
+                    <tr><th class="text-danger">MIN</th><th>SEN</th><th>SEL</th><th>RAB</th><th>KAM</th><th>JUM</th><th>SAB</th></tr>
                 </thead>
                 <tbody>
                     @php $daysInMonth = $currentDate->daysInMonth; $dayOfWeek = $currentDate->dayOfWeek; $currentDay = 1; @endphp
@@ -77,11 +63,18 @@
                                     <td class="bg-light calendar-td"></td>
                                 @else
                                     @php
-                                        $checkDate = \Carbon\Carbon::create($year, $month, $currentDay)->format('Y-m-d');
-                                        $tipe = $normalizedEvents[$checkDate] ?? null;
-                                        $bgClass = ($tipe == 'libur') ? 'bg-danger-custom' : (($tipe == 'kegiatan') ? 'bg-primary-custom' : '');
+                                        $dateStr = \Carbon\Carbon::create($year, $month, $currentDay)->format('Y-m-d');
+                                        $dayEvents = $allEvents->where('tanggal', $dateStr);
+                                        $bg = $dayEvents->where('tipe', 'libur')->first() ? 'bg-danger-custom' : ($dayEvents->where('tipe', 'matkul')->first() ? 'bg-success-custom' : ($dayEvents->where('tipe', 'kegiatan')->first() ? 'bg-primary-custom' : ''));
                                     @endphp
-                                    <td class="calendar-td {{ $bgClass }}">{{ $currentDay++ }}</td>
+                                    <td class="calendar-td {{ $bg }}">
+                                        <div class="text-end small fw-bold">{{ $currentDay++ }}</div>
+                                        @foreach($dayEvents as $e)
+                                            <div class="event-badge badge-{{ $e->tipe }}">
+                                                {{ ($e->tipe == 'matkul' && isset($e->mataKuliah)) ? $e->mataKuliah->nama_mk : $e->nama_kegiatan }}
+                                            </div>
+                                        @endforeach
+                                    </td>
                                 @endif
                             @endfor
                         </tr>
@@ -92,111 +85,112 @@
         </div>
     </div>
 
-    <div class="mt-5">
-        <h6 class="fw-bold mb-3 text-secondary small text-uppercase">Daftar Kegiatan & Libur Nasional</h6>
-        <div class="card overflow-hidden border-0 shadow-sm">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
-                    <tr class="small">
-                        <th class="ps-4 py-3">TANGGAL</th><th class="py-3">KEGIATAN</th><th class="text-center py-3">TIPE</th><th class="text-center py-3 d-print-none">AKSI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($events as $event)
-                        @if(\Carbon\Carbon::parse($event->tanggal)->format('m') == $month && \Carbon\Carbon::parse($event->tanggal)->format('Y') == $year)
-                        <tr>
-                            <td class="ps-4 small text-muted">{{ \Carbon\Carbon::parse($event->tanggal)->translatedFormat('d F Y') }}</td>
-                            <td class="fw-bold">{{ $event->nama_kegiatan }}</td>
-                            <td class="text-center">
-                                <span class="badge {{ $event->tipe == 'libur' ? 'bg-danger' : 'bg-primary' }} px-3">{{ $event->tipe }}</span>
-                            </td>
-                            <td class="text-center d-print-none">
-                                <button type="button" class="btn btn-sm btn-outline-info me-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $event->id }}"><i class="fas fa-edit"></i></button>
-                                <form action="{{ route('academic.destroy', $event->id) }}" method="POST" class="d-inline">
+    {{-- TABEL AGENDA --}}
+    <div class="card shadow-sm border-0 overflow-hidden mb-5">
+        <table class="table align-middle mb-0">
+            <thead class="table-light small fw-bold">
+                <tr><th class="ps-4 py-3">TANGGAL</th><th>AGENDA</th><th class="text-center">TIPE</th><th class="text-center d-print-none">AKSI</th></tr>
+            </thead>
+            <tbody>
+                @foreach($allEvents->sortBy('tanggal') as $e)
+                    @if(\Carbon\Carbon::parse($e->tanggal)->format('n') == $month)
+                    <tr>
+                        <td class="ps-4 small text-muted">{{ \Carbon\Carbon::parse($e->tanggal)->translatedFormat('d F Y') }}</td>
+                        <td class="fw-bold">{{ ($e->tipe == 'matkul' && isset($e->mataKuliah)) ? $e->mataKuliah->nama_mk : $e->nama_kegiatan }}</td>
+                        <td class="text-center"><span class="badge bg-{{ $e->tipe == 'matkul' ? 'success' : ($e->tipe == 'libur' ? 'danger' : 'primary') }}">{{ ucfirst($e->tipe) }}</span></td>
+                        <td class="text-center d-print-none">
+                            @if(!isset($e->is_api))
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editModal{{ $e->id }}"><i class="fas fa-edit"></i></button>
+                                <form action="{{ route('academic.destroy', $e->id) }}" method="POST" class="d-inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></button>
                                 </form>
-                            </td>
-                        </tr>
-                        @endif
-                    @empty
-                        <tr><td colspan="4" class="text-center py-4">Belum ada data.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                            @else
+                                <small class="text-muted">API</small>
+                            @endif
+                        </td>
+                    </tr>
+                    @endif
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </div>
 
-<div class="modal fade d-print-none" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
+{{-- MODAL TAMBAH --}}
+<div class="modal fade" id="modalTambah" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
             <form action="{{ route('academic.store') }}" method="POST">
                 @csrf
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold" id="modalTambahLabel">Tambah Jadwal Baru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-start">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Tanggal</label>
-                        <input type="date" name="tanggal" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Nama Kegiatan</label>
-                        <input type="text" name="nama_kegiatan" class="form-control" placeholder="Contoh: Libur Lebaran / UTS" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Tipe Jadwal</label>
-                        <select name="tipe" class="form-select" required>
-                            <option value="libur">Libur (Merah)</option>
-                            <option value="kegiatan">Kegiatan (Biru)</option>
+                <div class="modal-header bg-dark text-white"><b>Tambah Agenda Baru</b></div>
+                <div class="modal-body p-4">
+                    <label class="small fw-bold">Tanggal</label>
+                    <input type="date" name="tanggal" class="form-control mb-3" required>
+                    
+                    <label class="small fw-bold">Tipe</label>
+                    <select name="tipe" class="form-select mb-3" id="tipeInput" onchange="toggleInputs(this.value)">
+                        <option value="matkul">Mata Kuliah</option>
+                        <option value="kegiatan">Kegiatan Pribadi</option>
+                        <option value="libur">Libur</option>
+                    </select>
+
+                    <div id="div_matkul">
+                        <label class="small fw-bold">Pilih Mata Kuliah</label>
+                        <select name="mata_kuliah_id" class="form-select mb-3">
+                            <option value="">-- Pilih --</option>
+                            @foreach($mata_kuliahs as $mk)
+                                <option value="{{ $mk->id }}">{{ $mk->nama_mk }}</option>
+                            @endforeach
                         </select>
                     </div>
+
+                    <div id="div_kegiatan" style="display:none;">
+                        <label class="small fw-bold">Nama Kegiatan</label>
+                        <input type="text" name="nama_kegiatan" class="form-control mb-3" placeholder="Contoh: Rapat Dosen">
+                    </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-dark px-4">Simpan Data</button>
-                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-dark w-100">Simpan Agenda</button></div>
             </form>
         </div>
     </div>
 </div>
 
-@foreach($events as $event)
-<div class="modal fade d-print-none" id="editModal{{ $event->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content text-start">
-            <form action="{{ route('academic.update', $event->id) }}" method="POST">
-                @csrf @method('PUT')
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold">Edit Jadwal</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
+{{-- MODAL EDIT --}}
+@foreach($allEvents as $e)
+    @if(!isset($e->is_api))
+    <div class="modal fade" id="editModal{{ $e->id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <form action="{{ route('academic.update', $e->id) }}" method="POST">
+                    @csrf @method('PUT')
+                    <div class="modal-header bg-info text-white"><b>Edit Agenda</b></div>
+                    <div class="modal-body p-4">
                         <label class="small fw-bold">Tanggal</label>
-                        <input type="date" name="tanggal" value="{{ $event->tanggal }}" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Nama Kegiatan</label>
-                        <input type="text" name="nama_kegiatan" value="{{ $event->nama_kegiatan }}" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
+                        <input type="date" name="tanggal" value="{{ $e->tanggal }}" class="form-control mb-3">
+                        
+                        <label class="small fw-bold">Nama/Keterangan</label>
+                        <input type="text" name="nama_kegiatan" value="{{ $e->nama_kegiatan }}" class="form-control mb-3">
+                        
                         <label class="small fw-bold">Tipe</label>
-                        <select name="tipe" class="form-select">
-                            <option value="libur" {{ $event->tipe == 'libur' ? 'selected' : '' }}>Libur (Merah)</option>
-                            <option value="kegiatan" {{ $event->tipe == 'kegiatan' ? 'selected' : '' }}>Kegiatan (Biru)</option>
+                        <select name="tipe" class="form-select mb-3">
+                            <option value="matkul" {{ $e->tipe == 'matkul' ? 'selected' : '' }}>Mata Kuliah</option>
+                            <option value="kegiatan" {{ $e->tipe == 'kegiatan' ? 'selected' : '' }}>Kegiatan</option>
+                            <option value="libur" {{ $e->tipe == 'libur' ? 'selected' : '' }}>Libur</option>
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary w-100">Update Jadwal</button>
-                </div>
-            </form>
+                    <div class="modal-footer"><button type="submit" class="btn btn-info text-white w-100">Simpan Perubahan</button></div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+    @endif
 @endforeach
 
+<script>
+    function toggleInputs(val) {
+        document.getElementById('div_matkul').style.display = (val === 'matkul') ? 'block' : 'none';
+        document.getElementById('div_kegiatan').style.display = (val === 'matkul') ? 'none' : 'block';
+    }
+</script>
 @endsection

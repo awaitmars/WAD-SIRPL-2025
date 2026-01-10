@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MataKuliah;
 use Illuminate\Http\Request;
 use App\Models\SesiPraktikum;
 use App\Models\SesiKelas; 
@@ -16,6 +17,7 @@ class JadwalController extends Controller
         $praktikum = SesiPraktikum::where('dosen_id', 1)->get()->map(function($item) {
             $item->type = 'practicum';
             $item->label_jenis = 'PRAKTIKUM';
+            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
             $item->css_badge = 'border-purple-200 bg-purple-50 text-purple-600';
             $item->ruangan = $item->ruangan_lab; 
             return $item;
@@ -24,6 +26,7 @@ class JadwalController extends Controller
         $kelas = SesiKelas::where('dosen_id', 1)->get()->map(function($item) {
             $item->type = 'lecture';
             $item->label_jenis = 'KULIAH';
+            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
             $item->css_badge = 'border-indigo-200 bg-indigo-50 text-indigo-600';
             $item->ruangan = $item->ruangan_kelas;
             return $item;
@@ -32,8 +35,6 @@ class JadwalController extends Controller
         $jadwal = $praktikum->merge($kelas)->sortBy(function($item) {
             return $item->tanggal . $item->waktu_mulai;
         });
-
-        return view('dosen.jadwal.index', compact('jadwal'));
     }
 
     public function store(Request $request)
@@ -44,7 +45,7 @@ class JadwalController extends Controller
         ];
 
         $request->validate([
-            'mata_kuliah' => 'required',
+            'mata_kuliah_id' => 'required',
             'ruangan'     => 'required',
             'type'        => 'required',
             'tanggal'     => 'required|date',
@@ -56,7 +57,8 @@ class JadwalController extends Controller
 
         $data = [
             'dosen_id' => 1,
-            'mata_kuliah' => $request->mata_kuliah,
+            'mata_kuliah_id' => $request->mata_kuliah_id,
+            'mata_kuliah' => MataKuliah::find($request->mata_kuliah_id)->nama_mk,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
@@ -83,7 +85,7 @@ class JadwalController extends Controller
         ];
 
         $request->validate([
-            'mata_kuliah' => 'required',
+            'mata_kuliah_id' => 'required',
             'ruangan'     => 'required',
             'tanggal'     => 'required|date',
             'waktu_mulai' => 'required',
@@ -94,7 +96,7 @@ class JadwalController extends Controller
         $validasi = $this->checkPrayerTimeConflict($request->tanggal, $request->waktu_mulai, $request->waktu_selesai);
 
         $dataUpdate = [
-            'mata_kuliah' => $request->mata_kuliah,
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
