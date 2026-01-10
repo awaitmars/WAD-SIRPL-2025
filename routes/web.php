@@ -1,50 +1,68 @@
 <?php
 
-use App\Http\Controllers\BeritaController;
-use App\Http\Controllers\BudgetController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AcademicCalendarController;
 use App\Http\Controllers\MataKuliahController;
+use App\Http\Controllers\AuthController;
 
-// Kalender Akademik
-Route::resource('academic-calendar', AcademicCalendarController::class)->names([
-    'index' => 'academic.index',
-    'store' => 'academic.store',
-    'update' => 'academic.update',
-    'destroy' => 'academic.destroy',
-]);
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// ==========================================
+// 1. ROUTE PUBLIC / GUEST (Bisa diakses tanpa login)
+// ==========================================
+Route::middleware('guest')->group(function () {
+    // Halaman Login
+    Route::get('/login', [AuthController::class, 'index'])->name('login');
+    Route::post('/login', [AuthController::class, 'authenticate'])->name('login.post');
+    
+    // Halaman Register (Publik)
+    Route::get('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register', [AuthController::class, 'store'])->name('register.store');
+});
+
+// Logout (Hanya bisa diakses jika sudah login)
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 
-// Jadwal Mata Kuliah
-Route::get('/', function () {
-    return redirect()->route('jadwal.index'); });
-Route::get('/jadwal/export-pdf', [JadwalController::class, 'exportPdf'])->name('jadwal.exportPdf');
-Route::delete('/jadwal/{type}/{id}', [JadwalController::class, 'destroy'])
-    ->name('jadwal.destroy');
-Route::resource('jadwal', JadwalController::class)
-    ->except(['destroy', 'create', 'edit', 'show']);
+// ==========================================
+// 2. ROUTE PROTECTED (Wajib Login untuk akses fitur ini)
+// ==========================================
+Route::middleware(['auth'])->group(function () {
+    
+    // Redirect halaman utama ke dashboard jadwal
+    Route::get('/', function () {
+        return redirect()->route('jadwal.index');
+    });
 
-//Master Mata Kuliah
-Route::get('/master-mk', [MataKuliahController::class, 'index'])->name('master-mk.index');
-Route::post('/master-mk', [MataKuliahController::class, 'store'])->name('master-mk.store');
-Route::put('/master-mk/{id}', [MataKuliahController::class, 'update'])->name('master-mk.update');
-Route::delete('/master-mk/{id}', [MataKuliahController::class, 'destroy'])->name('master-mk.destroy');
-Route::get('/master-mk-download', [MataKuliahController::class, 'downloadPdf'])->name('master-mk.pdf');
+    // --- FITUR JADWAL ---
+    // Route Export PDF (PENTING: Ditaruh sebelum resource agar tidak dianggap ID)
+    Route::get('/jadwal/export-pdf', [JadwalController::class, 'exportPdf'])->name('jadwal.exportPdf');
+    
+    // Custom Delete (karena butuh parameter {type})
+    Route::delete('/jadwal/{type}/{id}', [JadwalController::class, 'destroy'])->name('jadwal.destroy');
+    
+    // Resource Utama Jadwal (CRUD)
+    Route::resource('jadwal', JadwalController::class)
+        ->except(['destroy', 'create', 'edit', 'show']);
 
-//Klipping
-Route::get('/kliping-isu', [BeritaController::class, 'index'])->name('kliping.index');
-Route::post('/kliping-isu/store', [BeritaController::class, 'store'])->name('kliping.store');
-Route::put('/kliping-isu/update/{id}', [BeritaController::class, 'updateNote'])->name('kliping.update');
-Route::delete('/kliping-isu/delete/{id}', [BeritaController::class, 'destroy'])->name('kliping.destroy');
-Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('kliping.cetakPdf');
-Route::get('/kliping-isu/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('kliping.cetakPdf');
-Route::get('/kliping-isu/cetak-semua', [BeritaController::class, 'cetakSemuaPdf'])->name('kliping.cetakSemua');
+    // --- FITUR KALENDER AKADEMIK ---
+    Route::resource('academic-calendar', AcademicCalendarController::class)->names([
+        'index'   => 'academic.index',
+        'store'   => 'academic.store',
+        'update'  => 'academic.update',
+        'destroy' => 'academic.destroy',
+    ]);
 
-//Anggaran
-Route::get('/', [BudgetController::class, 'index']); // Halaman awal
-Route::get('/anggaran', [BudgetController::class, 'index'])->name('budget.index');
-Route::post('/anggaran', [BudgetController::class, 'store'])->name('budget.store');
-Route::put('/anggaran/{id}', [BudgetController::class, 'update'])->name('budget.update'); // Route Update
-Route::delete('/anggaran/{id}', [BudgetController::class, 'destroy'])->name('budget.destroy'); // Route Delete
-Route::get('/anggaran/cetak', [BudgetController::class, 'cetakPdf'])->name('budget.cetak');
+    // --- FITUR MASTER MK ---
+    Route::get('/master-mk', [MataKuliahController::class, 'index'])->name('master-mk.index');
+    Route::post('/master-mk', [MataKuliahController::class, 'store'])->name('master-mk.store');
+    Route::put('/master-mk/{id}', [MataKuliahController::class, 'update'])->name('master-mk.update');
+    Route::delete('/master-mk/{id}', [MataKuliahController::class, 'destroy'])->name('master-mk.destroy');
+    Route::get('/master-mk-download', [MataKuliahController::class, 'downloadPdf'])->name('master-mk.pdf');
+
+});
