@@ -4,22 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\berita;
-use Barryvdh\DomPDF\Facade\Pdf; // Panggil Facade PDF
-use Carbon\Carbon; // Panggil Carbon untuk waktu
+use App\Models\MataKuliah;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class BeritaController extends Controller
 {
     public function index(Request $request)
     {
-        // Set Locale ke Indonesia agar waktu muncul "30 menit yang lalu"
         Carbon::setLocale('id');
 
-        $beritaTersimpan = berita::latest()->get();
+        $query = berita::with('mataKuliah')->latest();
+
+        if ($request->has('filter_matkul') && $request->filter_matkul != '') {
+            $query->where('mata_kuliah_id', $request->filter_matkul);
+        }
+
+        $beritaTersimpan = $query->get();
+        $daftarMatkul = MataKuliah::all(); 
         $artikelBerita = [];
 
         if ($request->has('keyword') && $request->keyword != null) {
-            
-            // Logika Filter Waktu (Tetap Sama)
             $timeQuery = "";
             if($request->has('waktu')) {
                 switch($request->waktu) {
@@ -42,13 +47,11 @@ class BeritaController extends Controller
                         foreach ($xmlObject->channel->item as $item) {
                             if ($limit >= 5) break;
                             $randomImage = 'https://loremflickr.com/320/240/business,technology?random=' . $limit;
-                            
                             $artikelBerita[] = [
                                 'title' => (string)$item->title,
                                 'source' => ['name' => (string)$item->source],
                                 'url' => (string)$item->link,
                                 'urlToImage' => $randomImage,
-                                // Simpan format tanggal asli untuk diproses di View
                                 'publishedAt' => (string)$item->pubDate, 
                             ];
                             $limit++;
@@ -58,14 +61,12 @@ class BeritaController extends Controller
             } catch (\Exception $e) { }
         }
 
-        return view('kliping.index', compact('beritaTersimpan', 'artikelBerita'));
+        return view('kliping.index', compact('beritaTersimpan', 'artikelBerita', 'daftarMatkul'));
     }
-
-    // Function Store, UpdateNote, Destroy TETAP SAMA (tidak saya tulis ulang agar hemat tempat)
-    // Pastikan function store, updateNote, destroy tetap ada di sini ya!
     
     public function store(Request $request) {
         berita::create([
+            'mata_kuliah_id' => $request->mata_kuliah_id,
             'judul' => $request->judul,
             'sumber' => $request->sumber,
             'url_berita' => $request->url_berita,
@@ -88,27 +89,38 @@ class BeritaController extends Controller
         return redirect()->back();
     }
 
-    // --- BAGIAN BARU: CETAK PDF PER ITEM ---
+    // --- UPDATE: CETAK SATUAN ---
     public function cetakPdf($id)
     {
-        $berita = berita::findOrFail($id);
+        // Load relasi mataKuliah agar namanya bisa diambil di PDF
+        $berita = berita::with('mataKuliah')->findOrFail($id);
         
-        // Kita load view khusus untuk PDF (nanti kita buat di langkah 4)
         $pdf = Pdf::loadView('kliping.pdf_template', compact('berita'));
-        
-        // Download PDF dengan nama file yang rapi
-        return $pdf->download('Kliping-'.$berita->id.'.pdf');
+        return $pdf->download('Validasi-'.$berita->id.'.pdf');
     }
 
-    public function cetakSemuaPdf()
+    // --- UPDATE: CETAK REKAP DENGAN FILTER ---
+    public function cetakSemuaPdf(Request $request)
     {
-        // Ambil semua berita, urutkan dari yang terbaru
-        $semuaBerita = berita::latest()->get();
+        $query = berita::with('mataKuliah')->latest();
         
-        // Load view khusus rekap tabel
-        $pdf = Pdf::loadView('kliping.pdf_rekap', compact('semuaBerita'));
+        // Variable untuk Judul Header di PDF
+        $infoMatkul = "Semua Mata Kuliah"; 
+
+        if ($request->has('filter_matkul') && $request->filter_matkul != '') {
+            $query->where('mata_kuliah_id', $request->filter_matkul);
+            
+            // Ambil nama matkul untuk dijadikan Judul Header
+            $matkulDipilih = MataKuliah::find($request->filter_matkul);
+            if($matkulDipilih) {
+                $infoMatkul = $matkulDipilih->nama_mk;
+            }
+        }
+
+        $semuaBerita = $query->get();
         
-        // Agar tabel muat di PDF, sebaiknya set kertas jadi Landscape
+        // Kirim data berita DAN info nama matkul ke View
+        $pdf = Pdf::loadView('kliping.pdf_rekap', compact('semuaBerita', 'infoMatkul'));
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan-Rekap-RPS.pdf');
