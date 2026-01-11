@@ -156,135 +156,121 @@
 @endsection
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 1. Inisialisasi Modal (Agar bisa dipanggil via JS)
+    const masterModal = new bootstrap.Modal(document.getElementById('modalMaster'));
 
-            async function loadProvinsi() {
-                try {
-                        const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json`);
-                        const data = await res.json();
-                        let options = '<option value="">Pilih Provinsi</option>';
-                        data.forEach(p => {
-                            // Kita simpan Nama di value untuk dikirim ke DB, dan ID di dataset untuk fetch Kota
-                            options += `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`;
-                        });
-                        document.getElementById('provinsi').innerHTML = options;
-                    } catch (error) {
-                        console.error("Gagal load provinsi:", error);
-                    }
-                }
-
-            document.getElementById('provinsi').addEventListener('change', async function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const provId = selectedOption.getAttribute('data-id');
-        
-                if (!provId) return;
-
-                try {
-                    const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provId}.json`);
-                    const data = await res.json();
-                    let options = '<option value="">Pilih Kota/Kab</option>';
-                    data.forEach(k => {
-                        options += `<option value="${k.name}">${k.name}</option>`;
-                    });
-                    document.getElementById('kota').innerHTML = options;
-                } catch (error) {
-                    console.error("Gagal load kota:", error);
-                }
+    // 2. Fungsi Load Provinsi
+    async function loadProvinsi() {
+        try {
+            const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json`);
+            const data = await res.json();
+            let options = '<option value="">Pilih Provinsi</option>';
+            data.forEach(p => {
+                options += `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`;
             });
+            document.getElementById('provinsi').innerHTML = options;
+        } catch (error) {
+            console.error("Gagal load provinsi:", error);
+        }
+    }
 
-            window.onload = loadProvinsi;
+    // 3. Event Listener untuk Load Kota saat Provinsi diubah
+    document.getElementById('provinsi').addEventListener('change', async function() {
+        await fillKota(this.options[this.selectedIndex].getAttribute('data-id'));
+    });
 
-            // --- 2. MODAL & FORM LOGIC ---
-            function adjustFormFields() {
-                const type = document.getElementById('dataType').value;
-                document.getElementById('sectionMK').style.display = (type === 'lab_only') ? 'none' : 'block';
-                document.getElementById('sectionLab').style.display = (type === 'mk_only') ? 'none' : 'block';
+    async function fillKota(provId, selectedKota = null) {
+        if (!provId) return;
+        try {
+            const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${provId}.json`);
+            const data = await res.json();
+            let options = '<option value="">Pilih Kota/Kab</option>';
+            data.forEach(k => {
+                options += `<option value="${k.name}">${k.name}</option>`;
+            });
+            document.getElementById('kota').innerHTML = options;
+            if (selectedKota) document.getElementById('kota').value = selectedKota;
+        } catch (error) {
+            console.error("Gagal load kota:", error);
+        }
+    }
+
+    // 4. Handle Tombol Tambah (Event Delegation agar lebih aman)
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-bs-target="#modalTambah"]')) {
+            e.preventDefault();
+            const form = document.getElementById('mainForm');
+            form.reset();
+            document.getElementById('modalTitle').innerText = "Tambah Data Baru";
+            form.action = "{{ route('master-mk.store') }}";
+            document.getElementById('methodField').innerHTML = "";
+            document.getElementById('groupType').style.display = "block";
+            adjustFormFields();
+            masterModal.show();
+        }
+    });
+
+    // 5. Handle Tombol Edit (PENTING: Gunakan async untuk menunggu kota terisi)
+    document.addEventListener('click', async function (e) {
+        const btn = e.target.closest('.btn-edit');
+        if (btn) {
+            const d = btn.dataset;
+            const form = document.getElementById('mainForm');
+            
+            document.getElementById('modalTitle').innerText = "Update Data";
+            form.action = "{{ url('master-mk') }}/" + d.id;
+            document.getElementById('methodField').innerHTML = '@method("PUT")';
+            document.getElementById('groupType').style.display = "none";
+
+            // Set Tipe Hidden
+            let typeInput = document.getElementById('in_type_hidden');
+            if (!typeInput) {
+                typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'type';
+                typeInput.id = 'in_type_hidden';
+                form.appendChild(typeInput);
+            }
+            typeInput.value = d.type;
+
+            // Isi Data Field
+            document.getElementById('in_kode').value = d.kode || '';
+            document.getElementById('in_nama_mk').value = d.nama || '';
+            document.getElementById('in_nama_lab').value = d.namalab || '';
+            document.getElementById('in_sks').value = d.sks || '';
+            document.getElementById('in_kapasitas').value = d.kapasitas || '';
+
+            // Handle Wilayah
+            if (d.provinsi) {
+                document.getElementById('provinsi').value = d.provinsi;
+                const provOption = Array.from(document.getElementById('provinsi').options).find(opt => opt.value === d.provinsi);
+                if (provOption) {
+                    const provId = provOption.getAttribute('data-id');
+                    await fillKota(provId, d.kota); // Tunggu sampai kota terisi baru set value
+                }
             }
 
-            // Handle Tombol Tambah
-            document.querySelector('[data-bs-target="#modalTambah"]')?.addEventListener('click', () => {
-                document.getElementById('modalTitle').innerText = "Tambah Data Baru";
-                document.getElementById('mainForm').action = "{{ route('master-mk.store') }}";
-                document.getElementById('methodField').innerHTML = "";
-                document.getElementById('groupType').style.display = "block";
-                document.getElementById('mainForm').reset();
-                adjustFormFields();
-                new bootstrap.Modal(document.getElementById('modalMaster')).show();
-            });
+            // Atur Tampilan Section
+            if (d.type === 'mk') {
+                document.getElementById('sectionMK').style.display = 'block';
+                document.getElementById('sectionLab').style.display = (d.namalab !== '') ? 'block' : 'none';
+            } else {
+                document.getElementById('sectionMK').style.display = 'none';
+                document.getElementById('sectionLab').style.display = 'block';
+            }
 
-            // Handle Tombol Edit
-            document.querySelectorAll('.btn-edit').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const d = this.dataset;
-                    const form = document.getElementById('mainForm');
+            masterModal.show();
+        }
+    });
 
-                    document.getElementById('modalTitle').innerText = "Update Data";
-                    document.getElementById('mainForm').action = "{{ url('master-mk') }}/" + d.id;
-                    document.getElementById('methodField').innerHTML = '@method("PUT")';
-                    document.getElementById('groupType').style.display = "none";
-                    
-                    let typeInput = document.getElementById('in_type_hidden');
-                    if (!typeInput) {
-                        typeInput = document.createElement('input');
-                        typeInput.type = 'hidden';
-                        typeInput.name = 'type';
-                        typeInput.id = 'in_type_hidden';
-                        form.appendChild(typeInput);
-                    }
+    function adjustFormFields() {
+        const type = document.getElementById('dataType').value;
+        document.getElementById('sectionMK').style.display = (type === 'lab_only') ? 'none' : 'block';
+        document.getElementById('sectionLab').style.display = (type === 'mk_only') ? 'none' : 'block';
+    }
 
-                    typeInput.value = d.type;
-
-                    document.getElementById('in_kode').value = d.kode;
-                    document.getElementById('in_nama_mk').value = d.nama;
-                    document.getElementById('in_nama_lab').value = d.namalab;
-                    document.getElementById('in_sks').value = d.sks;
-                    document.getElementById('in_kapasitas').value = d.kapasitas;
-                    document.getElementById('provinsi').value = d.provinsi || '';git
-                    document.getElementById('kota').value = d.kota || '';
-
-                    if (d.type === 'mk') {
-                        document.getElementById('sectionMK').style.display = 'block';
-                        document.getElementById('sectionLab').style.display = (d.namalab !== '') ? 'block' : 'none';
-                    } else {
-                        document.getElementById('sectionMK').style.display = 'none';
-                        document.getElementById('sectionLab').style.display = 'block';
-                    }
-
-                    new bootstrap.Modal(document.getElementById('modalMaster')).show();
-                });
-            });
-
-            window.onload = loadProvinsi;
-        </script>
-        <script>
-            @if ($errors->any())
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Terjadi Kesalahan',
-                    html: `
-                        <ul style="text-align: left;">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    `,
-                    confirmButtonColor: '#1F263E'
-                });
-                
-                var myModal = new bootstrap.Modal(document.getElementById('modalMaster'));
-                myModal.show();
-            @endif
-
-            // 2. Pop-up jika Berhasil (Success Session)
-            @if (session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: "{{ session('success') }}",
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            @endif
-        </script>
-        @endpush
+    window.onload = loadProvinsi;
+</script>
+@endpush

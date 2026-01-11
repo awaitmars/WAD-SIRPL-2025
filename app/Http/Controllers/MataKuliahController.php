@@ -79,31 +79,33 @@ class MataKuliahController extends Controller
 
     public function update(Request $request, $id)
 {
-    $type = $request->input('type'); // Kita ambil data type dari hidden input atau dataset
+    // 1. Validasi dasar (Opsional tapi disarankan)
+    $request->validate([
+        'type' => 'required',
+    ]);
 
-    if ($type === 'mk') {
-        // 1. Update Mata Kuliah
+    if ($request->type === 'mk') {
         $mk = MataKuliah::findOrFail($id);
         $mk->update($request->only('kode_mk', 'nama_mk', 'sks'));
 
-        // 2. Update Lab yang nempel ke MK ini (jika ada)
-        $lab = $mk->labs()->first();
-        if ($lab) {
-            $lab->update([
-                'nama_lab' => $request->input('nama_lab') ?? $lab->nama_lab,
+        $mk->labs()->updateOrCreate(
+            ['mata_kuliah_id' => $id], // Key pencari
+            [
+                'nama_lab'  => $request->input('nama_lab'),
                 'kapasitas' => $request->input('kapasitas'),
-                'provinsi' => $request->input('provinsi'),
-                'kota' => $request->input('kota'),
-            ]);
-        }
+                'provinsi'  => $request->input('provinsi'),
+                'kota'      => $request->input('kota'),
+            ]
+        );
+
     } else {
-        // 3. Update Lab Standalone
+        
         $lab = Lab::findOrFail($id);
         $lab->update([
-            'nama_lab' => $request->input('nama_lab'),
+            'nama_lab'  => $request->input('nama_lab'),
             'kapasitas' => $request->input('kapasitas'),
-            'provinsi' => $request->input('provinsi'),
-            'kota' => $request->input('kota'),
+            'provinsi'  => $request->input('provinsi'),
+            'kota'      => $request->input('kota'),
         ]);
     }
 

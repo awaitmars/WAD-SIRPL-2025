@@ -13,29 +13,49 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class JadwalController extends Controller
 {
     public function index()
-    {
-        $praktikum = SesiPraktikum::where('dosen_id', 1)->get()->map(function($item) {
-            $item->type = 'practicum';
-            $item->label_jenis = 'PRAKTIKUM';
-            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
-            $item->css_badge = 'border-purple-200 bg-purple-50 text-purple-600';
-            $item->ruangan = $item->ruangan_lab; 
-            return $item;
-        });
+{
+    $masterMk = MataKuliah::all();
 
-        $kelas = SesiKelas::where('dosen_id', 1)->get()->map(function($item) {
-            $item->type = 'lecture';
-            $item->label_jenis = 'KULIAH';
-            $item->mata_kuliah = $item->mataKuliah->nama_mata_kuliah ?? 'MK Tidak Ditemukan';
-            $item->css_badge = 'border-indigo-200 bg-indigo-50 text-indigo-600';
-            $item->ruangan = $item->ruangan_kelas;
-            return $item;
-        });
+    $praktikum = SesiPraktikum::where('dosen_id', 1)->get()->map(function ($item) use ($masterMk) {
+        $item->type = 'practicum';
+        $item->label_jenis = 'PRAKTIKUM';
 
-        $jadwal = $praktikum->merge($kelas)->sortBy(function($item) {
-            return $item->tanggal . $item->waktu_mulai;
-        });
-    }
+        $mk = $masterMk->where('id', $item->mata_kuliah_id)->first();
+        $item->nama_mk = $mk?->nama_mk ?? 'Mata Kuliah Tidak Diketahui';
+        $item->mata_kuliah_id_for_edit = $mk?->id; 
+        $item->css_badge = 'border-purple-200 bg-purple-50 text-purple-600';
+        $item->ruangan = $item->ruangan_lab;
+
+        $item->matkul_id_for_edit = $item->mata_kuliah_id;
+
+        return $item;
+    });
+    
+    $kelas = SesiKelas::where('dosen_id', 1)->get()->map(function($item) use ($masterMk) {
+        $item->type = 'lecture';
+        $item->label_jenis = 'KULIAH';
+
+        $mk = $masterMk->where('kode_mk', $item->mata_kuliah)->first();
+
+        if ($mk) {
+            $item->nama_mk = $mk->nama_mk;
+            $item->mata_kuliah_id_for_edit = $mk->id; 
+        } else {
+            $item->nama_mk = 'Mata Kuliah Tidak Diketahui';
+            $item->mata_kuliah_id_for_edit = null;
+        }
+        
+        $item->css_badge = 'border-indigo-200 bg-indigo-50 text-indigo-600';
+        $item->ruangan = $item->ruangan_kelas;
+        return $item;
+    });
+
+    $jadwal = $praktikum->merge($kelas)->sortBy(function($item) {
+        return $item->tanggal . $item->waktu_mulai;
+    });
+
+    return view('dosen.jadwal.index', compact('jadwal', 'masterMk'));
+}
 
     public function store(Request $request)
     {
@@ -53,12 +73,16 @@ class JadwalController extends Controller
             'waktu_selesai' => 'required|after:waktu_mulai',
         ], $messages);
 
+        $mk = MataKuliah::find($request->mata_kuliah_id);   
+        if (!$mk) {
+            return redirect()->back()->with('error', 'Mata Kuliah tidak ditemukan.');
+        }
+
         $validasi = $this->checkPrayerTimeConflict($request->tanggal, $request->waktu_mulai, $request->waktu_selesai);
 
         $data = [
             'dosen_id' => 1,
-            'mata_kuliah_id' => $request->mata_kuliah_id,
-            'mata_kuliah' => MataKuliah::find($request->mata_kuliah_id)->nama_mk,
+            // 'mata_kuliah_id' => $request->mata_kuliah_id,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
@@ -67,9 +91,11 @@ class JadwalController extends Controller
         ];
 
         if ($request->type === 'practicum') {
+            $data['mata_kuliah_id'] = $request->mata_kuliah_id;
             $data['ruangan_lab'] = $request->ruangan;
             SesiPraktikum::create($data);
         } else {
+            $data['mata_kuliah'] = $mk->kode_mk;
             $data['ruangan_kelas'] = $request->ruangan;
             SesiKelas::create($data);
         }
@@ -93,10 +119,15 @@ class JadwalController extends Controller
             'original_type' => 'required'
         ], $messages);
 
+        $mk = MataKuliah::find($request->mata_kuliah_id);
+        if (!$mk) {
+            return redirect()->back()->withErrors(['mata_kuliah_id' => 'Mata Kuliah tidak ditemukan.']);
+        }
+        
         $validasi = $this->checkPrayerTimeConflict($request->tanggal, $request->waktu_mulai, $request->waktu_selesai);
 
         $dataUpdate = [
-            'mata_kuliah_id' => $request->mata_kuliah_id,
+            // 'mata_kuliah_id' => $request->mata_kuliah_id,
             'tanggal' => $request->tanggal,
             'waktu_mulai' => $request->waktu_mulai,
             'waktu_selesai' => $request->waktu_selesai,
@@ -110,9 +141,11 @@ class JadwalController extends Controller
         }
 
         if ($request->type === 'practicum') {
+            $dataUpdate['mata_kuliah_id'] = $request->mata_kuliah_id;
             $dataUpdate['ruangan_lab'] = $request->ruangan;
             SesiPraktikum::findOrFail($id)->update($dataUpdate);
         } else {
+            $dataUpdate['mata_kuliah'] = $mk->kode_mk;
             $dataUpdate['ruangan_kelas'] = $request->ruangan;
             SesiKelas::findOrFail($id)->update($dataUpdate);
         }

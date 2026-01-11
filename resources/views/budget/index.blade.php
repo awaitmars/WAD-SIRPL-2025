@@ -9,7 +9,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         [x-cloak] { display: none !important; }
+
+        /* Memaksa judul kembali besar sesuai standar Bootstrap */
+        h4 {
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+        .text-muted {
+            font-size: 0.875rem !important;
+        }
     </style>
+    
 @endpush
 
 @section('content')

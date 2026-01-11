@@ -74,8 +74,25 @@ body {
 
 /* Main Content */
 #main-content {
-    margin-left: 260px;
-    padding: 40px;
+    margin-left: 260px !important;
+    padding: 2rem;
+    background-color: #f8f9fa;
+    position: relative;
+}
+
+.header-container{
+    position: relative;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-container .dropdown-menu{
+    top: 100% !important;
+    transform: none !important;
+    margin-top: 10px !important;
 }
 
 .content-card {
@@ -86,6 +103,10 @@ body {
     border: 1px solid #edf2f7;
 }
 
+.content-card-wrapper {
+    position: relative;
+    z-index: 1;
+}
 /* Button */
 .btn-custom-dark {
     background: #1a202c;
@@ -125,4 +146,87 @@ body {
 .badge-lab {
     background: #e6fffa;
     color: #047857;
+}
+
+.user-profile-card {
+       min-width: unset !important;
+       white-space: nowrap;
+       cursor: pointer;
+       border: 1px solid #edf2f7 !important;
+
+    }
+button.user-profile-card {
+    padding: 8px 16px !important;
+}
+    .user-profile-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        transform: translateY(-1px);
+    }
+
+    .user-profile-card::after{
+        display: none !important;
+    }
+
+    .user-avatar {
+        font-size: 1.2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .dropdown{
+        position: relative;
+        z-index: 9999 !important;
+    }
+    .dropdown-menu {
+        margin-top: 0.5rem !important;
+        z-index: 2000 !important;
+
+    }
+
+    .dropdown-item {
+        width: 100%;
+        text-align: left;
+    }
+
+    
+
+    .dropdown-menu-end[data-bs-popper] {
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .header-title h4 {
+        color: #1e293b;
+    }
+
+    .modal{
+        z-index: 2000 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1500 !important;
+    }
+
+    [x-cloak] { display: none !important; }
+
+.my-custom-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    background: white;
+    min-width: 160px;
+    border-radius: 12px;
+    z-index: 99999;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* Memastikan tombol logout rapi */
+.my-custom-menu .dropdown-item {
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.my-custom-menu .dropdown-item:hover {
+    background-color: #fff5f5 !important; /* Warna merah muda pudar saat hover */
 }

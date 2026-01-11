@@ -6,28 +6,28 @@
     <div class="sidebar-heading">Menu Utama</div>
     <ul class="nav flex-column">
         <li class="nav-item">
-            <a href="#" class="nav-link {{ request()->is('dashboard*') ? 'active' : '' }}">
+            <a href="{{  route('dashboard.index') }}" class="nav-link {{ request()->routeIs('dashboard.index') ? 'active' : '' }}">
                 <i class="fa fa-th-large"></i> Dashboard
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('master-mk.index') }}" class="nav-link {{ request()->is('master-mk*') ? 'active' : '' }}">
+            <a href="{{ route('master-mk.index') }}" class="nav-link {{ request()->routeIs('master-mk.*') ? 'active' : '' }}">
                 <i class="fa fa-database"></i> Master Mata Kuliah
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('jadwal.index') }}" class="nav-link {{ request()->is('jadwal*') ? 'active' : '' }}">
+            <a href="{{ route('jadwal.index') }}" class="nav-link {{ request()->routeIs('jadwal.*') ? 'active' : '' }}">
                 <i class="fa fa-chalkboard-teacher"></i> Jadwal Mata Kuliah
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('academic.index') }}" class="nav-link {{ request()->is('academic-calendar*') ? 'active' : '' }}">
+            <a href="{{ route('academic.index') }}" class="nav-link {{ request()->routeIs('academic.*') ? 'active' : '' }}">
                 <i class="fa fa-calendar-alt"></i> Kalender Akademik</a></li>
         <li class="nav-item">
-            <a href="{{ route('budget.index') }}" class="nav-link {{ request()->is('budget*') ? 'active' : '' }}">
+            <a href="{{ route('budget.index') }}" class="nav-link {{ request()->routeIs('budget.*') ? 'active' : '' }}">
             <i class="fa fa-wallet"></i> Anggaran Akademik</a></li>
         <li class="nav-item">
-            <a href="{{ route('kliping.index') }}" class="nav-link {{ request()->is('kliping-isu*') ? 'active' : '' }}">
+            <a href="{{ route('kliping.index') }}" class="nav-link {{ request()->routeIs('kliping*') ? 'active' : '' }}">
             <i class="fa fa-newspaper"></i> Kliping Isu</a></li>
     </ul>
 </nav>

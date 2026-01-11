@@ -13,7 +13,6 @@ return new class extends Migration
             // ID Dosen (Diasumsikan ada tabel users/dosen)
             $table->unsignedBigInteger('dosen_id')->nullable(); 
             $table->foreignId('mata_kuliah_id')->constrained('mata_kuliahs')->onDelete('cascade');
-            $table->string('mata_kuliah');
             $table->string('ruangan_lab'); // Pastikan kolom ini ada untuk menampung input ruangan
             $table->date('tanggal');
             $table->time('waktu_mulai');

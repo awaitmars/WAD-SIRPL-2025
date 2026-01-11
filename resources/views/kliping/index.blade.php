@@ -1,6 +1,8 @@
 @extends('layout.main')
 
 @section('title', 'Kliping Isu & Validasi')
+@section('page_title', 'Kliping Isu') {{-- Tambahkan baris ini --}}
+@section('page_subtitle', 'Berita & Materi Tambahan') {{-- Opsional: Tambahkan ini juga --}}
 
 @section('content')
 <style>

@@ -30,6 +30,6 @@ class SesiKelas extends Model
 
     public function mataKuliah()
     {
-        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
+        return $this->belongsTo(MataKuliah::class);
     }
 }

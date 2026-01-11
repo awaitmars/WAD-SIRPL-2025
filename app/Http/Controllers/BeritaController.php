@@ -77,7 +77,7 @@ class BeritaController extends Controller
         return redirect()->back()->with('success', 'Berita disimpan!');
     }
 
-    public function updateNote(Request $request, $id) {
+    public function update(Request $request, $id) {
         $berita = berita::findOrFail($id);
         $berita->update(['catatan_dosen' => $request->catatan_dosen]);
         return redirect()->back();

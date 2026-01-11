@@ -7,6 +7,8 @@ use App\Models\MataKuliah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
+use App\Models\SesiKelas;
+use App\Models\SesiPraktikum;
 
 class AcademicCalendarController extends Controller
 {
@@ -15,35 +17,67 @@ class AcademicCalendarController extends Controller
         $month = $request->get('month', Carbon::now()->month);
         $year = $request->get('year', Carbon::now()->year);
 
-        // 1. Ambil data dari Database
-        $dbEvents = AcademicCalendar::with('mataKuliah')->get();
-        $mata_kuliahs = MataKuliah::all();
+        // 1. Ambil data Agenda Manual dari Database
+        $dbEvents = AcademicCalendar::with('mataKuliah')
+            ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->get();
 
-        // 2. Ambil data dari API Hari Libur Nasional
+        // 2. Ambil data dari Sesi Kelas
+        $kelasEvents = SesiKelas::whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->get()
+            ->map(function($item) {
+                return (object)[
+                    'id' => $item->id,
+                    'tanggal' => $item->tanggal->format('Y-m-d'),
+                    'nama_kegiatan' => "Kelas: " . $item->mata_kuliah, // Menggunakan kolom mata_kuliah di tabel sesi_kelas
+                    'tipe' => 'matkul',
+                    'is_api' => false
+                ];
+            });
+
+        // 3. Ambil data dari Sesi Praktikum
+        $praktikumEvents = SesiPraktikum::whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->get()
+            ->map(function($item) {
+                return (object)[
+                    'id' => $item->id,
+                    'tanggal' => $item->tanggal->format('Y-m-d'),
+                    'nama_kegiatan' => "Praktikum: " . $item->mata_kuliah, // Menggunakan kolom mata_kuliah di tabel sesi_praktikums
+                    'tipe' => 'matkul',
+                    'is_api' => false
+                ];
+            });
+
+        // 4. Ambil data dari API Hari Libur
         $apiEvents = [];
         try {
             $response = Http::get("https://dayoffapi.vercel.app/api?year={$year}");
             if ($response->successful()) {
                 foreach ($response->json() as $holiday) {
                     $holidayDate = Carbon::parse($holiday['tanggal']);
-                    // Hanya ambil libur untuk bulan yang sedang ditampilkan
                     if ($holidayDate->month == $month) {
                         $apiEvents[] = (object)[
                             'id' => null,
                             'tanggal' => $holiday['tanggal'],
                             'nama_kegiatan' => $holiday['keterangan'],
                             'tipe' => 'libur',
-                            'is_api' => true // Penanda data dari API
+                            'is_api' => true
                         ];
                     }
                 }
             }
-        } catch (\Exception $e) {
-            // Jika API gagal, aplikasi tetap jalan
-        }
+        } catch (\Exception $e) {}
 
-        // 3. Gabungkan data DB dan API
-        $allEvents = collect($dbEvents)->concat($apiEvents);
+        // 5. Gabungkan Semua Sumber Data
+        $allEvents = collect($dbEvents)
+            ->concat($kelasEvents)
+            ->concat($praktikumEvents)
+            ->concat($apiEvents);
+
+        $mata_kuliahs = MataKuliah::all();
 
         return view('Academic.index', compact('allEvents', 'month', 'year', 'mata_kuliahs'));
     }

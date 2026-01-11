@@ -1,4 +1,6 @@
 @extends('layout.main')
+@section('page_title', 'Kalender Akademik')
+@section('page_subtitle', 'Validasi hari & waktu libur') 
 
 @push('styles')
 <style>

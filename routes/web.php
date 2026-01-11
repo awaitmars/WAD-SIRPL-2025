@@ -5,6 +5,9 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AcademicCalendarController;
 use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\BeritaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,10 +26,11 @@ Route::middleware('guest')->group(function () {
     // Halaman Register (Publik)
     Route::get('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/register', [AuthController::class, 'store'])->name('register.store');
-});
 
-// Logout (Hanya bisa diakses jika sudah login)
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+    Route::get('/', function () {
+        return redirect()->route('login');
+    });
+});
 
 
 // ==========================================
@@ -35,15 +39,17 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware(['auth'])->group(function () {
     
     // Redirect halaman utama ke dashboard jadwal
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    
     Route::get('/', function () {
-        return redirect()->route('jadwal.index');
+        return redirect()->route('dashboard.index');
     });
 
     // --- FITUR JADWAL ---
-    // Route Export PDF (PENTING: Ditaruh sebelum resource agar tidak dianggap ID)
+    // Route Export PDF 
     Route::get('/jadwal/export-pdf', [JadwalController::class, 'exportPdf'])->name('jadwal.exportPdf');
-    
-    // Custom Delete (karena butuh parameter {type})
     Route::delete('/jadwal/{type}/{id}', [JadwalController::class, 'destroy'])->name('jadwal.destroy');
     
     // Resource Utama Jadwal (CRUD)
@@ -59,10 +65,30 @@ Route::middleware(['auth'])->group(function () {
     ]);
 
     // --- FITUR MASTER MK ---
-    Route::get('/master-mk', [MataKuliahController::class, 'index'])->name('master-mk.index');
-    Route::post('/master-mk', [MataKuliahController::class, 'store'])->name('master-mk.store');
-    Route::put('/master-mk/{id}', [MataKuliahController::class, 'update'])->name('master-mk.update');
-    Route::delete('/master-mk/{id}', [MataKuliahController::class, 'destroy'])->name('master-mk.destroy');
-    Route::get('/master-mk-download', [MataKuliahController::class, 'downloadPdf'])->name('master-mk.pdf');
+    Route::prefix('master-mk')->name('master-mk.')->group(function () {
+        Route::get('/', [MataKuliahController::class, 'index'])->name('index');
+        Route::post('/', [MataKuliahController::class, 'store'])->name('store');
+        Route::put('/{id}', [MataKuliahController::class, 'update'])->name('update');
+        Route::delete('/{id}', [MataKuliahController::class, 'destroy'])->name('destroy');
+        Route::get('/download', [MataKuliahController::class, 'downloadPdf'])->name('pdf');
+    });
 
+        //Anggaran
+    Route::prefix('anggaran')->name('budget.')->group(function () {
+        Route::get('/', [BudgetController::class, 'index'])->name('index');
+        Route::post('/', [BudgetController::class, 'store'])->name('store');
+        Route::put('/{id}', [BudgetController::class, 'update'])->name('update'); // Route Update
+        Route::delete('/{id}', [BudgetController::class, 'destroy'])->name('destroy'); // Route Delete
+        Route::get('/cetak', [BudgetController::class, 'cetakPdf'])->name('cetak');
+    });
+
+    Route::prefix('kliping')->name('kliping.')->group(function () {
+        Route::get('/', [BeritaController::class, 'index'])->name('index');
+        Route::post('/', [BeritaController::class, 'store'])->name('store');
+        Route::put('/{id}', [BeritaController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BeritaController::class, 'destroy'])->name('destroy');
+
+        Route::get('/cetak-semua', [BeritaController::class, 'cetakSemuaPdf'])->name('cetakSemua');
+        Route::get('/cetak-pdf/{id}', [BeritaController::class, 'cetakPdf'])->name('cetakPdf');
+    });
 });
